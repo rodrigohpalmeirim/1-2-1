@@ -3,7 +3,7 @@ import "./App.css";
 import "./Spinner.css";
 import Peer from "peerjs";
 import { Spinner } from "./Spinner";
-import { faArrowRight, faPhone, faPhoneSlash } from '@fortawesome/free-solid-svg-icons'
+import { faArrowRight, faPhone, faPhoneSlash, faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash } from '@fortawesome/free-solid-svg-icons'
 import { ActionInput } from "./ActionInput";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -28,6 +28,8 @@ export default class App extends Component {
       id: "",
       ringing: false,
       call: false,
+      audio: true,
+      video: true,
     }
   }
 
@@ -128,6 +130,22 @@ export default class App extends Component {
         }
         {this.state.call && <video id="incoming-video" />}
         {this.state.call && <div id="button-tray">
+          {this.state.video ?
+            <button className="icon-button" onClick={() => { this.setState({ video: false }); mediaStream.getVideoTracks()[0].enabled = false; }}>
+              <FontAwesomeIcon icon={faVideo} />
+            </button> :
+            <button className="icon-button" onClick={() => { this.setState({ video: true }); mediaStream.getVideoTracks()[0].enabled = true; }} style={{ backgroundColor: "#BF616A" }}>
+              <FontAwesomeIcon icon={faVideoSlash} />
+            </button>
+          }
+          {this.state.audio ?
+            <button className="icon-button" onClick={() => { this.setState({ audio: false }); mediaStream.getAudioTracks()[0].enabled = false; }}>
+              <FontAwesomeIcon icon={faMicrophone} />
+            </button> :
+            <button className="icon-button" onClick={() => { this.setState({ audio: true }); mediaStream.getAudioTracks()[0].enabled = true; }} style={{ backgroundColor: "#BF616A" }}>
+              <FontAwesomeIcon icon={faMicrophoneSlash} />
+            </button>
+          }
           <button className="icon-button" onClick={() => this.endCall()} style={{ backgroundColor: "#BF616A" }}>
             <FontAwesomeIcon icon={faPhoneSlash} />
           </button>

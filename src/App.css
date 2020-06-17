@@ -130,3 +130,10 @@ button {
   box-shadow: 0px 0px 15px -5px black;
   transform: translate(0, -50%);
 }
+
+#button-tray {
+  display: flex;
+  position: absolute;
+  bottom: 5%;
+  z-index: 2;
+}

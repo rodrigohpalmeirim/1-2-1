@@ -9,7 +9,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 var mediaStream;
 var peer;
-var mediaConnections = [];
+var activeConnections = [];
 var caller;
 var incomingCall;
 
@@ -21,6 +21,7 @@ export default class App extends Component {
     this.call = this.call.bind(this);
     this.accept = this.accept.bind(this);
     this.reject = this.reject.bind(this);
+    this.endCall = this.endCall.bind(this);
 
     this.state = {
       username: "",
@@ -31,6 +32,8 @@ export default class App extends Component {
   }
 
   componentDidMount() {
+    window.addEventListener("resize", () => this.forceUpdate());
+
     navigator.mediaDevices.getUserMedia({ audio: true, video: true })
       .then(function (stream) {
         var video = document.getElementById("camera");
@@ -42,8 +45,6 @@ export default class App extends Component {
       });
 
     this.getId();
-
-    window.addEventListener("resize", () => this.forceUpdate());
   }
 
   getId() {
@@ -63,7 +64,7 @@ export default class App extends Component {
   call(id) {
     const mediaConnection = peer.call(id, mediaStream, { metadata: { username: this.state.username } });
 
-    mediaConnections.push(mediaConnection);
+    activeConnections.push(mediaConnection);
 
     mediaConnection.on("stream", (stream) => {
       this.setState({ call: true });
@@ -73,11 +74,13 @@ export default class App extends Component {
         video.play();
       };
     });
+
+    mediaConnection.on("close", () => this.endCall());
   }
 
   accept() {
     incomingCall.answer(mediaStream);
-    mediaConnections.push(incomingCall);
+    activeConnections.push(incomingCall);
     this.setState({ call: true });
     incomingCall.on("stream", (stream) => {
       var video = document.getElementById("incoming-video");
@@ -87,6 +90,8 @@ export default class App extends Component {
       };
     });
     this.setState({ ringing: false });
+
+    incomingCall.on("close", () => this.endCall());
   }
 
   reject() {
@@ -94,12 +99,19 @@ export default class App extends Component {
     this.setState({ ringing: false });
   }
 
+  endCall() {
+    this.setState({ call: false });
+    var connection;
+    while (connection = activeConnections.pop())
+      connection.close();
+  }
+
   render() {
     return (
       <div className="App" style={{ height: window.innerHeight, flexDirection: (window.innerWidth > window.innerHeight) ? "row" : "column" }}>
-        <video id="camera" muted style={!this.state.call ? {} : { position: "absolute", right: 20, bottom: 20, maxHeight: 300, maxWidth: 300 }} />
+        <video id="camera" muted style={!this.state.call ? {} : { position: "absolute", right: window.innerHeight * 0.02, bottom: window.innerHeight * 0.02, maxHeight: window.innerHeight * 0.35, maxWidth: window.innerHeight * 0.35 }} />
         <div className="spacer" />
-        {!this.state.call ?
+        {!this.state.call &&
           <div id="panel">
             {!this.state.username ? <div>
               <ActionInput placeholder="Enter your name" maxLength={40} icon={faArrowRight} autoFocus={true} action={(name) => { this.setState({ username: name }) }} />
@@ -112,9 +124,14 @@ export default class App extends Component {
                 </div>
             }
             {/* <button onClick={this.getId}>Get ID</button> */}
-          </div> :
-          <video id="incoming-video" />
+          </div>
         }
+        {this.state.call && <video id="incoming-video" />}
+        {this.state.call && <div id="button-tray">
+          <button className="icon-button" onClick={() => this.endCall()} style={{ backgroundColor: "#BF616A" }}>
+            <FontAwesomeIcon icon={faPhoneSlash} />
+          </button>
+        </div>}
         {this.state.ringing && <div className="popup">
           <p style={{ margin: 10 }}>{caller} is calling you</p>
           <button className="icon-button" onClick={() => this.reject()} style={{ backgroundColor: "#BF616A" }}>

@@ -3,7 +3,7 @@ import "./App.css";
 import "./Spinner.css";
 import Peer from "peerjs";
 import { Spinner } from "./Spinner";
-import { faArrowRight, faPhone, faPhoneSlash, faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash } from '@fortawesome/free-solid-svg-icons'
+import { faArrowRight, faPhone, faPhoneSlash, faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash } from "@fortawesome/free-solid-svg-icons"
 import { ActionInput } from "./ActionInput";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -57,7 +57,10 @@ export default class App extends Component {
   };
 
   getId() {
-    peer = new Peer();
+    peer = new Peer(null, {
+      host: "peerjs-server.ddns.net",
+      port: "9000"
+    });
 
     peer.on("open", (id) => {
       this.setState({ id: id });

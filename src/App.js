@@ -3,15 +3,20 @@ import "./App.css";
 import "./Spinner.css";
 import Peer from "peerjs";
 import { Spinner } from "./Spinner";
-import { faArrowRight, faPhone, faPhoneSlash, faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash } from "@fortawesome/free-solid-svg-icons"
+import { faArrowRight, faPhone, faPhoneSlash, faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash, faDesktop } from "@fortawesome/free-solid-svg-icons"
 import { ActionInput } from "./ActionInput";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
+const videoMargin = 5;
+
 var mediaStream;
 var peer;
-var activeConnections = [];
+var activeConnections = {};
 var caller;
-var incomingCall;
+var incomingStream;
+var captureConnection;
+var captureStream;
+var ratios = {};
 
 export default class App extends Component {
   constructor(props) {
@@ -31,11 +36,16 @@ export default class App extends Component {
       call: false,
       audio: true,
       video: true,
+      screenShare: false,
+      pinned: null,
     }
   }
 
   componentDidMount() {
-    window.addEventListener("resize", () => this.forceUpdate());
+    window.addEventListener("resize", () => {
+      this.optimizeSize();
+      this.forceUpdate();
+    });
 
     navigator.mediaDevices.getUserMedia({ audio: true, video: true })
       .then(function (stream) {
@@ -68,46 +78,34 @@ export default class App extends Component {
 
     peer.on("call", (incoming) => {
       caller = incoming.metadata.username;
-      incomingCall = incoming;
-      this.setState({ ringing: true });
+      incomingStream = incoming;
+      if (activeConnections[incoming.metadata.id])
+        this.accept();
+      else
+        this.setState({ ringing: true });
     });
   }
 
   call(id) {
-    const mediaConnection = peer.call(id, mediaStream, { metadata: { username: this.state.username } });
-    activeConnections.push(mediaConnection);
+    const mediaConnection = peer.call(id, mediaStream, { metadata: { id: this.state.id, username: this.state.username } });
+    if (!activeConnections[id])
+      activeConnections[id] = [];
+    activeConnections[id].push(mediaConnection);
     this.startCall();
-
-    mediaConnection.on("stream", (stream) => {
-      var video = document.getElementById("incoming-video");
-      video.srcObject = stream;
-      video.onloadedmetadata = (e) => {
-        video.play();
-      };
-    });
-
-    mediaConnection.on("close", () => this.endCall());
   }
 
   accept() {
-    incomingCall.answer(mediaStream);
-    activeConnections.push(incomingCall);
+    incomingStream.answer(mediaStream);
+    const id = incomingStream.metadata.id;
+    if (!activeConnections[id])
+      activeConnections[id] = [];
+    activeConnections[id].push(incomingStream);
     this.startCall();
-
-    incomingCall.on("stream", (stream) => {
-      var video = document.getElementById("incoming-video");
-      video.srcObject = stream;
-      video.onloadedmetadata = () => {
-        video.play();
-      };
-    });
     this.setState({ ringing: false });
-
-    incomingCall.on("close", () => this.endCall());
   }
 
   reject() {
-    incomingCall.close();
+    incomingStream.close();
     this.setState({ ringing: false });
   }
 
@@ -117,11 +115,65 @@ export default class App extends Component {
   }
 
   endCall() {
+    if (this.state.screenShare) this.endCapture();
     this.setState({ call: false });
     if (document.fullscreen && this.isMobile()) document.exitFullscreen();
-    var connection;
-    while (connection = activeConnections.pop())
-      connection.close();
+
+    for (const id in activeConnections) {
+      try {
+        var connection;
+        while (connection = activeConnections[id].pop())
+          connection.close();
+        delete activeConnections[id];
+      } catch { }
+    }
+  }
+
+  startCapture(displayMediaOptions) {
+    navigator.mediaDevices.getDisplayMedia(displayMediaOptions)
+      .then(stream => {
+        captureStream = stream;
+        for (const id in activeConnections)
+          captureConnection = peer.call(id, stream, { metadata: { id: this.state.id, username: this.state.username + "'s screenshare" } });
+        stream.getVideoTracks()[0].onended = () => this.setState({ screenShare: false });
+      })
+      .catch(err => { this.setState({ screenShare: false }) });
+  }
+
+  endCapture() {
+    captureConnection.close();
+    captureStream.getTracks().forEach(track => track.stop());
+  }
+
+  optimizeSize() {
+    var maxArea = 0;
+    var optimizedHeight = window.innerHeight;
+    for (var i = 1; i <= Object.values(ratios).length; i++) {
+      var area = 0;
+      var rowHeight = window.innerHeight;
+      for (var j = 1; j <= Object.values(ratios).length;) {
+        var rowRatio = 0;
+        for (var k = j; k < j + i && k <= Object.values(ratios).length; k++) {
+          rowRatio += Object.values(ratios)[k - 1];
+        }
+        rowHeight = Math.min(rowHeight, window.innerHeight / Math.ceil(Object.values(ratios).length / i), window.innerWidth / rowRatio);
+        area += rowHeight ** 2 * rowRatio;
+        j = k;
+      }
+      if (area > maxArea) {
+        maxArea = area;
+        optimizedHeight = rowHeight;
+      }
+    }
+    this.setState({ rowHeight: optimizedHeight - 2 * videoMargin })
+  }
+
+  pin(id) {
+    if (!this.state.pinned && Object.keys(ratios).length > 1) {
+      this.setState({ pinned: id });
+    } else {
+      this.setState({ pinned: null });
+    }
   }
 
   render() {
@@ -141,11 +193,48 @@ export default class App extends Component {
                   <ActionInput placeholder="Enter peer ID" icon={faPhone} autoFocus={true} action={this.call} />
                 </div>
             }
-            {/* <button onClick={this.getId}>Get ID</button> */}
           </div>
         }
-        {this.state.call && <video id="incoming-video" />}
+        {this.state.call && <div id="call">
+          {Object.keys(activeConnections).map(id => {
+            return activeConnections[id].map(mediaConnection => {
+              const connectionId = mediaConnection.connectionId;
+
+              mediaConnection.on("stream", (stream) => {
+                const video = document.getElementById(connectionId);
+                video.srcObject = stream;
+                video.onloadedmetadata = () => {
+                  video.play();
+                  ratios[connectionId] = stream.getVideoTracks()[0].getSettings().aspectRatio;
+                  this.optimizeSize();
+                }
+              });
+
+              mediaConnection.on("close", () => {
+                delete ratios[connectionId];
+                try { document.getElementById(connectionId).remove(); } catch { }
+                this.optimizeSize();
+                if (Object.keys(activeConnections).length === 0)
+                  this.endCall();
+              });
+
+              return <video className="incoming-video" key={connectionId} id={connectionId} onClick={() => this.pin(connectionId)}
+                style={(this.state.pinned === connectionId || Object.keys(ratios).length === 1) ?
+                  { position: "absolute", width: "100%", height: "100%", borderRadius: 0, zIndex: 1, cursor: Object.keys(ratios).length === 1 ? "auto" : "pointer" } :
+                  { height: this.state.rowHeight, margin: videoMargin }}
+              />;
+            })
+          })}
+        </div>}
         {this.state.call && <div id="button-tray">
+          {this.state.screenShare ?
+            <button className="icon-button" onClick={() => { this.setState({ screenShare: false }); this.endCapture(); }}>
+              <FontAwesomeIcon icon={faDesktop} />
+            </button> :
+            <button className="icon-button" onClick={() => { this.setState({ screenShare: true }); this.startCapture(); }} style={{ backgroundColor: "#BF616A" }}>
+              <FontAwesomeIcon icon={faDesktop} />
+            </button>
+          }
           {this.state.video ?
             <button className="icon-button" onClick={() => { this.setState({ video: false }); mediaStream.getVideoTracks()[0].enabled = false; }}>
               <FontAwesomeIcon icon={faVideo} />

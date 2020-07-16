@@ -227,14 +227,14 @@ export default class App extends Component {
           })}
         </div>}
         {this.state.call && <div id="button-tray">
-          {this.state.screenShare ?
+          {!this.isMobile() && Object.keys(ratios).length > 0 && (this.state.screenShare ?
             <button className="icon-button" onClick={() => { this.setState({ screenShare: false }); this.endCapture(); }}>
               <FontAwesomeIcon icon={faDesktop} />
             </button> :
             <button className="icon-button" onClick={() => { this.setState({ screenShare: true }); this.startCapture(); }} style={{ backgroundColor: "#BF616A" }}>
               <FontAwesomeIcon icon={faDesktop} />
             </button>
-          }
+          )}
           {this.state.video ?
             <button className="icon-button" onClick={() => { this.setState({ video: false }); mediaStream.getVideoTracks()[0].enabled = false; }}>
               <FontAwesomeIcon icon={faVideo} />

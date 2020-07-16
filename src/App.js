@@ -190,7 +190,7 @@ export default class App extends Component {
   render() {
     return (
       <div className="App" style={{ height: window.innerHeight, flexDirection: (window.innerWidth > window.innerHeight) ? "row" : "column" }}>
-        <video id="camera" muted style={!this.state.call ? {} : { position: "absolute", right: window.innerHeight * 0.02, bottom: window.innerHeight * 0.02, maxHeight: window.innerHeight * 0.35, maxWidth: window.innerHeight * 0.35 }} />
+        <video id="camera" muted style={!this.state.call ? {} : { position: "absolute", right: window.innerHeight * 0.02, bottom: window.innerHeight * 0.02, maxHeight: window.innerHeight * 0.3, maxWidth: window.innerWidth * 0.3 }} />
         <div className="spacer" />
         {!this.state.call &&
           <div id="panel">

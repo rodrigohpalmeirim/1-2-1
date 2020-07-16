@@ -33,6 +33,7 @@ export default class App extends Component {
       username: "",
       id: "",
       ringing: false,
+      trayHidden: false,
       call: false,
       audio: true,
       video: true,
@@ -112,6 +113,16 @@ export default class App extends Component {
   startCall() {
     this.setState({ call: true });
     if (this.isMobile()) document.querySelector(".App").requestFullscreen();
+
+    var timeout = setTimeout(() => { this.setState({ trayHidden: true }) }, 2000);
+    function showTray() {
+      clearTimeout(timeout);
+      this.setState({ trayHidden: false });
+      timeout = setTimeout(() => { this.setState({ trayHidden: true }) }, 2000);
+    }
+    showTray = showTray.bind(this);
+    document.addEventListener("mousemove", showTray);
+    document.addEventListener("touchstart", showTray);
   }
 
   endCall() {
@@ -225,35 +236,35 @@ export default class App extends Component {
               />;
             })
           })}
-        </div>}
-        {this.state.call && <div id="button-tray">
-          {!this.isMobile() && Object.keys(ratios).length > 0 && (this.state.screenShare ?
-            <button className="icon-button" onClick={() => { this.setState({ screenShare: false }); this.endCapture(); }}>
-              <FontAwesomeIcon icon={faDesktop} />
-            </button> :
-            <button className="icon-button" onClick={() => { this.setState({ screenShare: true }); this.startCapture(); }} style={{ backgroundColor: "#BF616A" }}>
-              <FontAwesomeIcon icon={faDesktop} />
+          <div id="button-tray" style={!this.state.trayHidden ? {} : { bottom: "-5%", opacity: 0 }}>
+            {!this.isMobile() && Object.keys(ratios).length > 0 && (this.state.screenShare ?
+              <button className="icon-button" onClick={() => { this.setState({ screenShare: false }); this.endCapture(); }}>
+                <FontAwesomeIcon icon={faDesktop} />
+              </button> :
+              <button className="icon-button" onClick={() => { this.setState({ screenShare: true }); this.startCapture(); }} style={{ backgroundColor: "#BF616A" }}>
+                <FontAwesomeIcon icon={faDesktop} />
+              </button>
+            )}
+            {this.state.video ?
+              <button className="icon-button" onClick={() => { this.setState({ video: false }); mediaStream.getVideoTracks()[0].enabled = false; }}>
+                <FontAwesomeIcon icon={faVideo} />
+              </button> :
+              <button className="icon-button" onClick={() => { this.setState({ video: true }); mediaStream.getVideoTracks()[0].enabled = true; }} style={{ backgroundColor: "#BF616A" }}>
+                <FontAwesomeIcon icon={faVideoSlash} />
+              </button>
+            }
+            {this.state.audio ?
+              <button className="icon-button" onClick={() => { this.setState({ audio: false }); mediaStream.getAudioTracks()[0].enabled = false; }}>
+                <FontAwesomeIcon icon={faMicrophone} />
+              </button> :
+              <button className="icon-button" onClick={() => { this.setState({ audio: true }); mediaStream.getAudioTracks()[0].enabled = true; }} style={{ backgroundColor: "#BF616A" }}>
+                <FontAwesomeIcon icon={faMicrophoneSlash} />
+              </button>
+            }
+            <button className="icon-button" onClick={() => this.endCall()} style={{ backgroundColor: "#BF616A" }}>
+              <FontAwesomeIcon icon={faPhoneSlash} />
             </button>
-          )}
-          {this.state.video ?
-            <button className="icon-button" onClick={() => { this.setState({ video: false }); mediaStream.getVideoTracks()[0].enabled = false; }}>
-              <FontAwesomeIcon icon={faVideo} />
-            </button> :
-            <button className="icon-button" onClick={() => { this.setState({ video: true }); mediaStream.getVideoTracks()[0].enabled = true; }} style={{ backgroundColor: "#BF616A" }}>
-              <FontAwesomeIcon icon={faVideoSlash} />
-            </button>
-          }
-          {this.state.audio ?
-            <button className="icon-button" onClick={() => { this.setState({ audio: false }); mediaStream.getAudioTracks()[0].enabled = false; }}>
-              <FontAwesomeIcon icon={faMicrophone} />
-            </button> :
-            <button className="icon-button" onClick={() => { this.setState({ audio: true }); mediaStream.getAudioTracks()[0].enabled = true; }} style={{ backgroundColor: "#BF616A" }}>
-              <FontAwesomeIcon icon={faMicrophoneSlash} />
-            </button>
-          }
-          <button className="icon-button" onClick={() => this.endCall()} style={{ backgroundColor: "#BF616A" }}>
-            <FontAwesomeIcon icon={faPhoneSlash} />
-          </button>
+          </div>
         </div>}
         {this.state.ringing && <div className="popup">
           <p style={{ margin: 10 }}>{caller} is calling you</p>

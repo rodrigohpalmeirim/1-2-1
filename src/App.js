@@ -29,6 +29,7 @@ export default class App extends Component {
     this.reject = this.reject.bind(this);
     this.startCall = this.startCall.bind(this);
     this.endCall = this.endCall.bind(this);
+    this.initConnection = this.initConnection.bind(this);
 
     this.state = {
       username: "",
@@ -142,6 +143,27 @@ export default class App extends Component {
     }
   }
 
+  initConnection(mediaConnection) {
+    const connectionId = mediaConnection.connectionId;
+    mediaConnection.on("stream", (stream) => {
+      const video = document.getElementById(connectionId);
+      video.srcObject = stream;
+      video.onloadedmetadata = () => {
+        video.play();
+        ratios[connectionId] = stream.getVideoTracks()[0].getSettings().aspectRatio;
+        this.optimizeSize();
+      }
+    });
+
+    mediaConnection.on("close", () => {
+      delete ratios[connectionId];
+      try { document.getElementById(connectionId).remove(); } catch { }
+      this.optimizeSize();
+      if (Object.keys(activeConnections).length === 0)
+        this.endCall();
+    });
+  }
+
   startCapture(displayMediaOptions) {
     navigator.mediaDevices.getDisplayMedia(displayMediaOptions)
       .then(stream => {
@@ -212,25 +234,7 @@ export default class App extends Component {
           {Object.keys(activeConnections).map(id => {
             return activeConnections[id].map(mediaConnection => {
               const connectionId = mediaConnection.connectionId;
-
-              mediaConnection.on("stream", (stream) => {
-                const video = document.getElementById(connectionId);
-                video.srcObject = stream;
-                video.onloadedmetadata = () => {
-                  video.play();
-                  ratios[connectionId] = stream.getVideoTracks()[0].getSettings().aspectRatio;
-                  this.optimizeSize();
-                }
-              });
-
-              mediaConnection.on("close", () => {
-                delete ratios[connectionId];
-                try { document.getElementById(connectionId).remove(); } catch { }
-                this.optimizeSize();
-                if (Object.keys(activeConnections).length === 0)
-                  this.endCall();
-              });
-
+              this.initConnection(mediaConnection);
               return <video className="incoming-video" key={connectionId} id={connectionId} onClick={() => this.pin(connectionId)}
                 style={(this.state.pinned === connectionId || Object.keys(ratios).length === 1) ?
                   { position: "absolute", width: "100%", height: "100%", borderRadius: 0, zIndex: 1, cursor: Object.keys(ratios).length === 1 ? "auto" : "pointer" } :

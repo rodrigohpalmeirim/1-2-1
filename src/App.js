@@ -6,6 +6,7 @@ import { Spinner } from "./Spinner";
 import { faArrowRight, faPhone, faPhoneSlash, faVideo, faVideoSlash, faMicrophone, faMicrophoneSlash, faDesktop } from "@fortawesome/free-solid-svg-icons"
 import { ActionInput } from "./ActionInput";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ToggleButton } from "./ToggleButton";
 
 const videoMargin = 5;
 
@@ -238,30 +239,20 @@ export default class App extends Component {
             })
           })}
           <div id="button-tray" style={!this.state.trayHidden ? {} : { bottom: "-5%", opacity: 0 }}>
-            {!this.isMobile() && Object.keys(ratios).length > 0 && (this.state.screenShare ?
-              <button className="icon-button" onClick={() => { this.setState({ screenShare: false }); this.endCapture(); }}>
-                <FontAwesomeIcon icon={faDesktop} />
-              </button> :
-              <button className="icon-button" onClick={() => { this.setState({ screenShare: true }); this.startCapture(); }} style={{ backgroundColor: "#BF616A" }}>
-                <FontAwesomeIcon icon={faDesktop} />
-              </button>
-            )}
-            {this.state.video ?
-              <button className="icon-button" onClick={() => { this.setState({ video: false }); mediaStream.getVideoTracks()[0].enabled = false; }}>
-                <FontAwesomeIcon icon={faVideo} />
-              </button> :
-              <button className="icon-button" onClick={() => { this.setState({ video: true }); mediaStream.getVideoTracks()[0].enabled = true; }} style={{ backgroundColor: "#BF616A" }}>
-                <FontAwesomeIcon icon={faVideoSlash} />
-              </button>
+            {!this.isMobile() && Object.keys(ratios).length > 0 &&
+              <ToggleButton active={this.state.screenShare} activeIcon={faDesktop} onToggle={() => {
+                this.state.screenShare ? this.endCapture() : this.startCapture();
+                this.setState({ screenShare: !this.state.screenShare });
+              }} />
             }
-            {this.state.audio ?
-              <button className="icon-button" onClick={() => { this.setState({ audio: false }); mediaStream.getAudioTracks()[0].enabled = false; }}>
-                <FontAwesomeIcon icon={faMicrophone} />
-              </button> :
-              <button className="icon-button" onClick={() => { this.setState({ audio: true }); mediaStream.getAudioTracks()[0].enabled = true; }} style={{ backgroundColor: "#BF616A" }}>
-                <FontAwesomeIcon icon={faMicrophoneSlash} />
-              </button>
-            }
+            <ToggleButton active={this.state.video} activeIcon={faVideo} inactiveIcon={faVideoSlash} onToggle={() => {
+              this.setState({ video: !this.state.video });
+              mediaStream.getVideoTracks()[0].enabled = !mediaStream.getVideoTracks()[0].enabled;
+            }} />
+            <ToggleButton active={this.state.audio} activeIcon={faMicrophone} inactiveIcon={faMicrophoneSlash} onToggle={() => {
+              this.setState({ audio: !this.state.audio });
+              mediaStream.getAudioTracks()[0].enabled = !mediaStream.getAudioTracks()[0].enabled;
+            }} />
             <button className="icon-button" onClick={() => this.endCall()} style={{ backgroundColor: "#BF616A" }}>
               <FontAwesomeIcon icon={faPhoneSlash} />
             </button>

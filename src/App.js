@@ -122,6 +122,7 @@ export default class App extends Component {
     }
     showTray = showTray.bind(this);
     document.addEventListener("mousemove", showTray);
+    document.addEventListener("click", showTray);
     document.addEventListener("touchstart", showTray);
   }
 

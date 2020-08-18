@@ -17,6 +17,10 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+body {
+  overflow: hidden;
+}
+
 .App {
   text-align: center;
   background-color: var(--background-1);
@@ -41,7 +45,6 @@
   -webkit-transform: rotateY(180deg);
   -moz-transform: rotateY(180deg);
   background-color: black;
-  z-index: 2;
 }
 
 #call {

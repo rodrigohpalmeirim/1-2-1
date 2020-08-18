@@ -7,6 +7,7 @@ import { faArrowRight, faPhone, faPhoneSlash, faVideo, faVideoSlash, faMicrophon
 import { ActionInput } from "./ActionInput";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ToggleButton } from "./ToggleButton";
+import { Draggable } from "./Draggable";
 
 const videoMargin = 5;
 
@@ -30,6 +31,7 @@ export default class App extends Component {
     this.startCall = this.startCall.bind(this);
     this.endCall = this.endCall.bind(this);
     this.initConnection = this.initConnection.bind(this);
+    this.cameraResizeHandler = this.cameraResizeHandler.bind(this);
 
     this.state = {
       username: "",
@@ -42,25 +44,43 @@ export default class App extends Component {
       screenShare: false,
       pinned: null,
     }
+
+    this.cameraPos = { x: 0, y: 0 };
   }
 
   componentDidMount() {
     window.addEventListener("resize", () => {
       this.optimizeSize();
       this.forceUpdate();
+      this.cameraResizeHandler();
     });
 
-    navigator.mediaDevices.getUserMedia({ audio: true, video: true })
-      .then(function (stream) {
-        var video = document.getElementById("camera");
-        video.srcObject = stream;
-        video.onloadedmetadata = function () {
-          video.play();
-        };
-        mediaStream = stream;
-      });
+    videoMountedHandler = videoMountedHandler.bind(this);
+    navigator.mediaDevices.getUserMedia({ audio: true, video: true }).then(videoMountedHandler);
+    
+    function videoMountedHandler(stream) {
+      const video = document.getElementById("camera");
+      video.srcObject = stream;
+      video.onloadedmetadata = function () {
+        video.play();
+      };
+      mediaStream = stream;
+      video.onresize = this.cameraResizeHandler;
+    }
 
     this.getId();
+  }
+
+  cameraResizeHandler() {
+    const video = document.getElementById("camera");
+    this.setState({
+      cameraWidth: video.clientWidth,
+      cameraHeight: video.clientHeight,
+    });
+    this.cameraPos = {
+      x: video.getBoundingClientRect().x,
+      y: video.getBoundingClientRect().y,
+    }
   }
 
   isMobile() {
@@ -114,6 +134,7 @@ export default class App extends Component {
 
   startCall() {
     this.setState({ call: true });
+    setTimeout(this.cameraResizeHandler, 1);
     if (this.isMobile()) document.querySelector(".App").requestFullscreen();
 
     var timeout = setTimeout(() => { this.setState({ trayHidden: true }) }, 2000);
@@ -214,7 +235,20 @@ export default class App extends Component {
   render() {
     return (
       <div className="App" style={{ height: window.innerHeight, flexDirection: (window.innerWidth > window.innerHeight) ? "row" : "column" }}>
-        <video id="camera" muted style={!this.state.call ? {} : { position: "absolute", right: window.innerHeight * 0.02, bottom: window.innerHeight * 0.02, maxHeight: window.innerHeight * 0.3, maxWidth: window.innerWidth * 0.3 }} />
+        <Draggable
+          disabled={!this.state.call}
+          x={!this.state.call ? this.cameraPos.x : window.innerWidth - this.state.cameraWidth - 20}
+          y={!this.state.call ? this.cameraPos.y : window.innerHeight - this.state.cameraHeight - 20}
+          style={{ ...(this.state.call ? {} : { position: "initial" }), ...{ zIndex: 2 } }}
+          snap={[
+            [20, 20],
+            [20, window.innerHeight - this.state.cameraHeight - 20],
+            [window.innerWidth - this.state.cameraWidth - 20, 20],
+            [window.innerWidth - this.state.cameraWidth - 20, window.innerHeight - this.state.cameraHeight - 20]
+          ]}
+        >
+          <video id="camera" muted style={!this.state.call ? {} : { right: window.innerHeight * 0.02, bottom: window.innerHeight * 0.02, maxHeight: window.innerHeight * 0.3, maxWidth: window.innerWidth * 0.3 }} />
+        </Draggable>
         <div className="spacer" />
         {!this.state.call &&
           <div id="panel">

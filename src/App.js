@@ -174,6 +174,10 @@ export default class App extends Component {
         ratios[connectionId] = stream.getVideoTracks()[0].getSettings().aspectRatio;
         this.optimizeSize();
       }
+      video.onresize = () => {
+        ratios[connectionId] = stream.getVideoTracks()[0].getSettings().aspectRatio;
+        this.optimizeSize();
+      }
     });
 
     mediaConnection.on("close", () => {

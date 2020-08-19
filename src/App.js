@@ -19,6 +19,7 @@ var incomingStream;
 var captureConnection;
 var captureStream;
 var ratios = {};
+var cameraPos = { x: 0, y: 0 };
 
 export default class App extends Component {
   constructor(props) {
@@ -44,8 +45,6 @@ export default class App extends Component {
       screenShare: false,
       pinned: null,
     }
-
-    this.cameraPos = { x: 0, y: 0 };
   }
 
   componentDidMount() {
@@ -77,7 +76,7 @@ export default class App extends Component {
       cameraWidth: video.clientWidth,
       cameraHeight: video.clientHeight,
     });
-    this.cameraPos = {
+    cameraPos = {
       x: video.getBoundingClientRect().x,
       y: video.getBoundingClientRect().y,
     }
@@ -274,8 +273,8 @@ export default class App extends Component {
       <div className="App" style={{ height: window.innerHeight, flexDirection: (window.innerWidth > window.innerHeight) ? "row" : "column" }}>
         <Draggable
           disabled={!this.state.call}
-          x={!this.state.call ? this.cameraPos.x : window.innerWidth - this.state.cameraWidth - 20}
-          y={!this.state.call ? this.cameraPos.y : window.innerHeight - this.state.cameraHeight - 20}
+          x={!this.state.call ? cameraPos.x : window.innerWidth - this.state.cameraWidth - 20}
+          y={!this.state.call ? cameraPos.y : window.innerHeight - this.state.cameraHeight - 20}
           style={{ ...(this.state.call ? {} : { position: "initial" }), ...{ zIndex: 2 } }}
           snap={[
             [20, 20],

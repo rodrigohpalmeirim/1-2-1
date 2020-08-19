@@ -57,7 +57,7 @@ export default class App extends Component {
 
     videoMountedHandler = videoMountedHandler.bind(this);
     navigator.mediaDevices.getUserMedia({ audio: true, video: true }).then(videoMountedHandler);
-    
+
     function videoMountedHandler(stream) {
       const video = document.getElementById("camera");
       video.srcObject = stream;
@@ -107,22 +107,35 @@ export default class App extends Component {
       else
         this.setState({ ringing: true });
     });
+
+    peer.on("connection", (connection) => {
+      if (activeConnections[connection.peer]) {
+        activeConnections[connection.peer].data = connection;
+        connection.on("open", () => {
+          connection.on("data", (data) => this.receiveMessageHandler(connection.peer, data));
+        });
+      }
+    });
   }
 
   call(id) {
     const mediaConnection = peer.call(id, mediaStream, { metadata: { id: this.state.id, username: this.state.username } });
     if (!activeConnections[id])
-      activeConnections[id] = [];
-    activeConnections[id].push(mediaConnection);
+      activeConnections[id] = { media: [], data: null };
+    activeConnections[id].media.push(mediaConnection);
     this.startCall();
   }
 
   accept() {
     incomingStream.answer(mediaStream);
     const id = incomingStream.metadata.id;
+    const connection = peer.connect(id);
+    connection.on("open", () => {
+      connection.on("data", (data) => this.receiveMessageHandler(connection.peer, data));
+    });
     if (!activeConnections[id])
-      activeConnections[id] = [];
-    activeConnections[id].push(incomingStream);
+      activeConnections[id] = { media: [], data: connection };
+    activeConnections[id].media.push(incomingStream);
     this.startCall();
     this.setState({ ringing: false });
   }
@@ -149,6 +162,26 @@ export default class App extends Component {
     document.addEventListener("touchstart", showTray);
   }
 
+  receiveMessageHandler(id, data) {
+    console.log("Received data:", data);
+    if (data === "DISCONNECT") {
+      this.disconnectFromPeer(id);
+    }
+  }
+
+  disconnectFromPeer(id) {
+    try {
+      var connection;
+      while (connection = activeConnections[id].media.pop())
+        connection.close();
+      activeConnections[id].data.close();
+      delete activeConnections[id];
+    } catch { }
+
+    if (Object.keys(activeConnections).length === 0)
+      this.endCall();
+  }
+
   endCall() {
     if (this.state.screenShare) this.endCapture();
     this.setState({ call: false });
@@ -156,9 +189,12 @@ export default class App extends Component {
 
     for (const id in activeConnections) {
       try {
+        activeConnections[id].data.send("DISCONNECT");
+        console.log(activeConnections[id].data)
         var connection;
-        while (connection = activeConnections[id].pop())
+        while (connection = activeConnections[id].media.pop())
           connection.close();
+        /* activeConnections[id].data.close(); */
         delete activeConnections[id];
       } catch { }
     }
@@ -182,10 +218,7 @@ export default class App extends Component {
 
     mediaConnection.on("close", () => {
       delete ratios[connectionId];
-      try { document.getElementById(connectionId).remove(); } catch { }
       this.optimizeSize();
-      if (Object.keys(activeConnections).length === 0)
-        this.endCall();
     });
   }
 
@@ -225,7 +258,7 @@ export default class App extends Component {
         optimizedHeight = rowHeight;
       }
     }
-    this.setState({ rowHeight: optimizedHeight - 2 * videoMargin })
+    this.setState({ rowHeight: optimizedHeight - 2 * videoMargin });
   }
 
   pin(id) {
@@ -270,7 +303,7 @@ export default class App extends Component {
         }
         {this.state.call && <div id="call">
           {Object.keys(activeConnections).map(id => {
-            return activeConnections[id].map(mediaConnection => {
+            return activeConnections[id].media.map(mediaConnection => {
               const connectionId = mediaConnection.connectionId;
               this.initConnection(mediaConnection);
               return <video className="incoming-video" key={connectionId} id={connectionId} onClick={() => this.pin(connectionId)}

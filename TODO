@@ -1,0 +1,4 @@
+TODO close connection after sending disconnect message
+send disconnect message on reject call
+add video fit screen functionality
+add camera frame resize functionality

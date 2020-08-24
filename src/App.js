@@ -226,19 +226,24 @@ export default class App extends Component {
   }
 
   startCapture(displayMediaOptions) {
+    this.setState({ screenShare: true });
     navigator.mediaDevices.getDisplayMedia(displayMediaOptions)
       .then(stream => {
         captureStream = stream;
         for (const id in activeConnections)
           captureConnection = peer.call(id, stream, { metadata: { id: this.state.id, username: this.state.username + "'s screenshare" } });
-        stream.getVideoTracks()[0].onended = () => this.setState({ screenShare: false });
+        stream.getVideoTracks()[0].onended = () => this.endCapture();
       })
       .catch(err => { this.setState({ screenShare: false }) });
   }
 
   endCapture() {
-    captureConnection.close();
-    captureStream.getTracks().forEach(track => track.stop());
+    this.setState({ screenShare: false });
+
+    try {
+      captureConnection.close();
+      captureStream.getTracks().forEach(track => track.stop());
+    } catch { }
 
     for (const id in activeConnections)
       activeConnections[id].data.send("CLOSE " + captureConnection.connectionId);
@@ -323,7 +328,6 @@ export default class App extends Component {
             {!this.isMobile() && Object.keys(ratios).length > 0 &&
               <ToggleButton active={this.state.screenShare} activeIcon={faDesktop} onToggle={() => {
                 this.state.screenShare ? this.endCapture() : this.startCapture();
-                this.setState({ screenShare: !this.state.screenShare });
               }} />
             }
             <ToggleButton active={this.state.video} activeIcon={faVideo} inactiveIcon={faVideoSlash} onToggle={() => {

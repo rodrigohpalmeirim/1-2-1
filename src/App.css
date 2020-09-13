@@ -1,4 +1,5 @@
 :root {
+  --background-0: #242933;
   --background-1: #2E3440;
   --background-2: #3B4252;
   --background-3: #434C5E;
@@ -36,6 +37,21 @@ body {
   overflow: hidden;
 }
 
+#background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.waves {
+  width: 100%;
+  height: 20%;
+}
+
 #camera {
   max-width: min(500px, 90vw);
   max-height: min(500px, 50vh);
@@ -64,6 +80,16 @@ body {
   background-color: black;
   border-radius: 10px;
   cursor: pointer;
+}
+
+.item-title::after {
+  content: "";
+  display: block;
+  height: 1px;
+  background-color: var(--foreground-1);
+  opacity: 0.5;
+  width: 50%;
+  margin: 8px auto;
 }
 
 input {
@@ -124,6 +150,7 @@ button {
   display: flex;
   flex-direction: column;
   align-items: center;
+  z-index: 1;
 }
 
 #username-form {

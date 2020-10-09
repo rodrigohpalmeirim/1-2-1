@@ -15,6 +15,7 @@ const videoMargin = 5;
 var mediaStream;
 var activeConnections = {};
 var caller;
+var notification;
 var incomingMedia;
 var captureConnection;
 var captureStream;
@@ -53,6 +54,8 @@ export default class VideocallApp extends Component {
     videoMountedHandler = videoMountedHandler.bind(this);
     navigator.mediaDevices.getUserMedia({ audio: true, video: true }).then(videoMountedHandler);
 
+    Notification.requestPermission();
+
     function videoMountedHandler(stream) {
       const video = document.getElementById("camera");
       video.srcObject = stream;
@@ -66,10 +69,12 @@ export default class VideocallApp extends Component {
     this.props.peer.on("call", (incoming) => {
       caller = incoming.metadata.username;
       incomingMedia = incoming;
-      if (activeConnections[incoming.metadata.id])
+      if (activeConnections[incoming.metadata.id]) {
         this.accept();
-      else
+      } else {
         this.setState({ ringing: true });
+        notification = new Notification(caller + " is calling you");
+      }
     });
 
     this.props.peer.on("connection", (connection) => {
@@ -87,7 +92,7 @@ export default class VideocallApp extends Component {
       track.stop();
     });
     window.removeEventListener("resize", this.resizeHandler);
-    this.props.peer.on("call", () => {});
+    this.props.peer.on("call", () => { });
   }
 
   resizeHandler() {
@@ -124,6 +129,7 @@ export default class VideocallApp extends Component {
 
   accept() {
     incomingMedia.answer(mediaStream);
+    try { notification.close(); } catch {}
     const id = incomingMedia.metadata.id;
     const connection = this.props.peer.connect(id);
     connection.on("open", () => {
@@ -138,6 +144,7 @@ export default class VideocallApp extends Component {
 
   reject() {
     incomingMedia.close();
+    try { notification.close(); } catch {}
     this.setState({ ringing: false });
   }
 

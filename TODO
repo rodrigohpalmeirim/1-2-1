@@ -1,6 +1,11 @@
-fix screencapture closed not sending close message
-TODO close connection after sending disconnect message
+remove events when leaving videocall app
+close connection after sending disconnect message
 send disconnect message on reject call
+add ringing
+handle multiple peers connected on file transfer
+add QR code id
+add drag-and-drop
+add ETA
 add video fit screen functionality
 add camera frame resize functionality
 add tooltips

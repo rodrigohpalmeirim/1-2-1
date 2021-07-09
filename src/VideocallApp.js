@@ -54,7 +54,8 @@ export default class VideocallApp extends Component {
     videoMountedHandler = videoMountedHandler.bind(this);
     navigator.mediaDevices.getUserMedia({ audio: true, video: true }).then(videoMountedHandler);
 
-    Notification.requestPermission();
+    if ('Notification' in window)
+      Notification.requestPermission();
 
     function videoMountedHandler(stream) {
       const video = document.getElementById("camera");
@@ -73,7 +74,8 @@ export default class VideocallApp extends Component {
         this.accept();
       } else {
         this.setState({ ringing: true });
-        notification = new Notification(caller + " is calling you");
+        if ('Notification' in window)
+          notification = new Notification(caller + " is calling you");
       }
     });
 

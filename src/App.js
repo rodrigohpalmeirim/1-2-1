@@ -20,7 +20,7 @@ export default class App extends Component {
         }
 
         peer = new Peer(null, {
-            host: "rod-peerjs-server.herokuapp.com",
+            host: "peerjs.rodlabs.dev",
             port: "443",
             secure: true,
         });

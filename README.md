@@ -1,68 +1,37 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# 1-2-1
 
-## Available Scripts
+A browser app for peer-to-peer video calls and file transfers. Media and files travel directly between the two browsers over WebRTC; a server is only used to help the peers find each other. Built in 2020.
 
-In the project directory, you can run:
+**Try it: [rodrigohpalmeirim.github.io/1-2-1](https://rodrigohpalmeirim.github.io/1-2-1/)**
 
-### `npm start`
+## Features
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Each visitor gets a random ID (click it to copy). Share it with the other person, or paste theirs, to connect.
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+**Videocall**
+- Enter your name and call a peer by ID; the callee gets an accept/reject prompt and a browser notification
+- Toggle camera and microphone, share your screen (desktop only), end the call
+- Incoming videos are tiled to use as much of the screen as possible; click one to pin it full-screen
+- Draggable self-view that snaps to the screen corners; the control tray auto-hides
+- Goes full-screen automatically on mobile
 
-### `npm test`
+**File Transfer**
+- Pick one or more files to share; the connected peer sees the list and clicks a file to download it
+- Files are sent in 64 KB chunks, with progress shown on both sides
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Tech stack
 
-### `npm run build`
+React 16 (Create React App) with React Router, [PeerJS](https://peerjs.com/) for WebRTC connections, and Font Awesome icons. The app connects to a self-hosted PeerJS signalling server at `peerjs.rodlabs.dev` (set in `src/App.js`). Deployed to GitHub Pages with `gh-pages`.
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Run locally
 
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
+```sh
+git clone https://github.com/rodrigohpalmeirim/1-2-1.git
+cd 1-2-1
+npm install
+npm start        # dev server on http://localhost:3000
+npm run build    # production build in build/
+npm run deploy   # publish build/ to GitHub Pages
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
-
-### Analyzing the Bundle Size
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
-
-### Making a Progressive Web App
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
-
-### Advanced Configuration
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
-
-### Deployment
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
-
-### `npm run build` fails to minify
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+The project uses `react-scripts` 3 (webpack 4). On Node.js 17 or newer, prefix the commands with `NODE_OPTIONS=--openssl-legacy-provider`.
